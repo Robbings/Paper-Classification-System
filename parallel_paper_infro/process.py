@@ -1,3 +1,4 @@
+import json
 import os
 
 from utils import client, load_md, load_chapters_from_directory
@@ -35,7 +36,7 @@ def process_paper_task(task_config):
             # 如果是单个文件，作为一个章节处理
             try:
                 content = load_md(excellent_path)
-                excellent_chapters_list.append([("完整论文", content)])
+                excellent_chapters_list.append([("完整论文", content, "paper")])
                 print(f"[{task_id}] 成功加载优秀论文作为单个章节")
             except Exception as e:
                 print(f"[{task_id}] 加载优秀论文失败: {excellent_path}, 错误: {str(e)}")    
@@ -45,8 +46,8 @@ def process_paper_task(task_config):
         # 将所有优秀论文的章节合并为一个列表
         excellent_chapters = []
         for i, chapters in enumerate(excellent_chapters_list):
-            for j, (chapter_name, content) in enumerate(chapters):
-                excellent_chapters.append((f"优秀论文{i+1}_{chapter_name}", content))
+            for j, (chapter_name, content, description) in enumerate(chapters):
+                excellent_chapters.append((f"优秀论文{i+1}_{chapter_name}", content, description))
         print(f"[{task_id}] 成功合并 {len(excellent_chapters_list)} 个优秀级别论文的章节，共 {len(excellent_chapters)} 个章节")
     else:
         print(f"[{task_id}] 警告: 未能加载任何优秀级别论文章节!")
@@ -67,7 +68,7 @@ def process_paper_task(task_config):
             # 如果是单个文件，作为一个章节处理
             try:
                 content = load_md(warning_path)
-                warning_chapters_list.append([("完整论文", content)])
+                warning_chapters_list.append([("完整论文", content, "paper")])
                 print(f"[{task_id}] 成功加载警告论文作为单个章节")
             except Exception as e:
                 print(f"[{task_id}] 加载警告论文失败: {warning_path}, 错误: {str(e)}")
@@ -78,8 +79,8 @@ def process_paper_task(task_config):
         # 将所有警告论文的章节合并为一个列表
         warning_chapters = []
         for i, chapters in enumerate(warning_chapters_list):
-            for j, (chapter_name, content) in enumerate(chapters):
-                warning_chapters.append((f"警告论文{i+1}_{chapter_name}", content))
+            for j, (chapter_name, content, description) in enumerate(chapters):
+                warning_chapters.append((f"警告论文{i+1}_{chapter_name}", content, description))
         print(f"[{task_id}] 成功合并 {len(warning_chapters_list)} 个警告级别论文的章节，共 {len(warning_chapters)} 个章节")
     else:
         print(f"[{task_id}] 警告: 未能加载任何警告级别论文章节!")
@@ -95,7 +96,7 @@ def process_paper_task(task_config):
         # 如果是单个文件，作为一个章节处理
         try:
             content = load_md(predict_path)
-            predict_chapters = [("完整论文", content)]
+            predict_chapters = [("完整论文", content, "paper")]
             print(f"[{task_id}] 成功加载待预测论文作为单个章节")
         except Exception as e:
             print(f"[{task_id}] 加载待预测论文失败: {str(e)}")
@@ -105,33 +106,34 @@ def process_paper_task(task_config):
     summaries_dir = os.path.join("output", "summaries")
     os.makedirs(summaries_dir, exist_ok=True)
     folder_name = os.path.basename(os.path.normpath(task_config["source_path"]))
-    excellent_summary_path = os.path.join(summaries_dir, f"{folder_name}_excellent_final_summary.txt")
-    warning_summary_path = os.path.join(summaries_dir, f"{folder_name}_warning_final_summary.txt")
+    excellent_summary_path = os.path.join(summaries_dir, f"{folder_name}_excellent_final_summary.json")
+    warning_summary_path = os.path.join(summaries_dir, f"{folder_name}_warning_final_summary.json")
 
-    summary_excellent = None
-    summary_warning = None
+    summary_excellent_list = None
+    summary_warning_list = None
     
     # 尝试加载已有的摘要
+    # TODO: 这里更改为加载带标签的摘要
     if os.path.exists(excellent_summary_path):
         try:
             with open(excellent_summary_path, 'r', encoding='utf-8') as f:
-                summary_excellent = f.read()
+                summary_excellent_list = json.load(f)
             print(f"[{task_id}] 成功加载已有的优秀论文摘要")
         except Exception as e:
             print(f"[{task_id}] 加载优秀论文摘要失败: {str(e)}")
-            summary_excellent = None
+            summary_excellent_list = None
     
     if os.path.exists(warning_summary_path):
         try:
             with open(warning_summary_path, 'r', encoding='utf-8') as f:
-                summary_warning = f.read()
+                summary_warning_list = json.load(f)
             print(f"[{task_id}] 成功加载已有的警告论文摘要")
         except Exception as e:
             print(f"[{task_id}] 加载警告论文摘要失败: {str(e)}")
-            summary_warning = None
+            summary_warning_list = None
     
     # 如果摘要不存在，则生成并保存
-    if summary_excellent is None or summary_warning is None:
+    if summary_excellent_list is None or summary_warning_list is None:
         print(f"[{task_id}] 开始并行处理论文章节摘要...")
         
         summaries = summarize_papers_chapters_parallel({ # 摘要生成
@@ -139,23 +141,24 @@ def process_paper_task(task_config):
             f"warning": warning_chapters
         })
         
-        summary_excellent = summaries.get(f"excellent")
-        summary_warning = summaries.get(f"warning")
+        summary_excellent_list = summaries.get(f"excellent")
+        summary_warning_list = summaries.get(f"warning")
         
         # 保存摘要以便后续使用
-        if summary_excellent:
+        # 没看懂，既然前面的保存没有意义，为什么还要保存呢？？？？
+        if summary_excellent_list:
             with open(excellent_summary_path, 'w', encoding='utf-8') as f:
-                f.write(summary_excellent)
+                json.dump(summary_excellent_list, f, ensure_ascii=False, indent=4)
             print(f"[{task_id}] 已保存优秀论文摘要到 {excellent_summary_path}")
-        
-        if summary_warning:
+
+        if summary_warning_list:
             with open(warning_summary_path, 'w', encoding='utf-8') as f:
-                f.write(summary_warning)
+                json.dump(summary_warning_list, f, ensure_ascii=False, indent=4)
             print(f"[{task_id}] 已保存警告论文摘要到 {warning_summary_path}")
     
 
     # === 启动最终分类流程 ===
-    overall_judgement = classify_paper_by_chapters(predict_chapters, summary_excellent, summary_warning, task_id)
+    overall_judgement = classify_paper_by_chapters(predict_chapters, summary_excellent_list, summary_warning_list, task_id)
     print(f"[{task_id}] {overall_judgement}")
 
     # 保存LLM回复结果到文件

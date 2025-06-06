@@ -1,3 +1,6 @@
+import json
+
+from multipart import file_path
 from openai import OpenAI
 import os
 
@@ -19,7 +22,7 @@ def load_chapters_from_directory(directory_path):
         directory_path: 章节文件所在的目录路径
         
     Returns:
-        章节列表，每个元素为(章节名, 章节内容)的元组
+        章节列表，每个元素为(章节名, 章节内容， description)的元组
     """
     chapters = []
     
@@ -32,7 +35,7 @@ def load_chapters_from_directory(directory_path):
         # 检查是否有同名子文件夹（例如 BY1701171/BY1701171/）
         dir_name = os.path.basename(directory_path)
         sub_dir_path = os.path.join(directory_path, dir_name)
-        
+        description_path = os.path.join(sub_dir_path, "chapter_info.json")
         # 如果存在同名子文件夹，则从子文件夹中读取章节文件
         if os.path.exists(sub_dir_path) and os.path.isdir(sub_dir_path):
             print(f"📂 找到章节子文件夹: {sub_dir_path}")
@@ -46,15 +49,23 @@ def load_chapters_from_directory(directory_path):
         
         # 按文件名排序，确保章节顺序正确
         files.sort()
-        
-        for file_name in files:
-            file_path = os.path.join(chapter_dir, file_name)
+
+        chapter_info = []
+        if os.path.exists(description_path):
+            with open(description_path, 'r', encoding='utf-8') as desc_file:
+                chapter_info = json.load(desc_file)
+                print(f"  📄 成功加载章节描述: {description_path}")
+        else:
+            print(f"  ⚠️ 未找到章节描述文件: {description_path}, 使用空描述")
+
+        for chapter in chapter_info:
+            file_path = chapter.get("file_path")
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     # 使用文件名作为章节名（去掉.md后缀）
-                    chapter_name = file_name.replace('.md', '')
-                    chapters.append((chapter_name, content))
+                    chapter_name = chapter.get("title")
+                    chapters.append((chapter_name, content, chapter.get("description", "chapter")))
                     print(f"  ✅ 成功加载章节: {chapter_name}")
             except Exception as e:
                 print(f"  ❌ 加载章节文件失败: {file_path}, 错误: {str(e)}")

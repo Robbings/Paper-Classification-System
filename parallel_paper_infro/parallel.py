@@ -1,8 +1,10 @@
+import json
 import os
 import multiprocessing
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from scripts.regsetup import description
 
 from summarize import summarize_chapter
 from classify import process_chapter_for_classification
@@ -26,21 +28,31 @@ def process_paper_chapters_for_summary(label, chapters):
     os.makedirs(save_dir, exist_ok=True)
     
     # 处理每个章节
-    summary = None
-    for i, (chapter_name, chapter_content) in enumerate(chapters):
+    summary_list = []
+    for i, (chapter_name, chapter_content, description) in enumerate(chapters):
         print(f"  ⏳ 处理章节 {i+1}/{len(chapters)}: {chapter_name}")
+        # 从summary_list中获取与当前章节description相同的摘要
+        summary = ""
+        for item in summary_list:
+            if item["description"] == description:
+                summary = item["summary"]
+                summary_list.remove(item)
+                break
         summary = summarize_chapter(chapter_name, chapter_content, summary, save_dir, i, label)
-    
+        summary_list.append({
+            "summary": summary,
+            "description": description
+        })
     # 保存最终摘要
-    final_file = os.path.join(save_dir, f"{label}_final_summary.txt")
+    final_file = os.path.join(save_dir, f"{label}_final_summary.json")
     with open(final_file, "w", encoding="utf-8") as f:
-        f.write(summary)
+        json.dump(summary_list, f, ensure_ascii=False, indent=4)
     print(f"📊 已保存 {label} 的最终摘要到 {final_file}")
     
-    return label, summary
+    return label, summary_list
 
 # 添加并行处理函数
-def summarize_papers_chapters_parallel(papers_dict):
+def summarize_papers_chapters_parallel(papers_dict): # 意义不明的传参方式会影响阅读效率
     """
     并行处理多篇论文的章节摘要
     
@@ -63,13 +75,13 @@ def summarize_papers_chapters_parallel(papers_dict):
         # 获取结果
         for future in as_completed(future_to_label):
             try:
-                label, summary = future.result()
-                results[label] = summary
+                label, summary_list = future.result()
+                results[label] = summary_list
                 print(f"完成论文处理: {label}")
             except Exception as e:
                 print(f"处理论文时出错: {str(e)}")
                 # 继续处理其他任务，不让一个失败影响所有
-    
+
     return results
 
 def classify_chapters_parallel(chapters, summary_excellent, summary_warning, save_dir="output/classifications"):
@@ -96,10 +108,10 @@ def classify_chapters_parallel(chapters, summary_excellent, summary_warning, sav
         future_to_chapter = {
             executor.submit(
                 process_chapter_for_classification, 
-                i, chapter_name, chapter_content, 
+                i, chapter_name, chapter_content, description,
                 summary_excellent, summary_warning, save_dir
             ): chapter_name 
-            for i, (chapter_name, chapter_content) in enumerate(chapters)
+            for i, (chapter_name, chapter_content, description) in enumerate(chapters)
         }
         
         # 获取结果
@@ -119,8 +131,8 @@ if __name__ == "__main__":
     from parallel_paper_infro.utils import load_chapters_from_directory, load_md
 
     # 示例：处理多篇论文的章节摘要
-    source_folder = './paper'
-    excellent_paths = os.path.join(source_folder, "excellent paper")
+    source_folder = 'E:/Code/paperClassification/paper'
+    excellent_paths = [os.path.join(source_folder, "excellent paper")]
     excellent_chapters_list = []
 
     for excellent_path in excellent_paths:

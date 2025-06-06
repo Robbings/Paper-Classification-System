@@ -72,11 +72,11 @@ def process_md_file(file_path, output_dir):
     
     # 获取摘要部分
     abstract = parser.get_section_content(description="abstract_ch")
-    
+
     # 提取所有章节
     chapters = []
     for node in parse_tree:
-        if node.get("description") == "chapter":
+        if node["level"] == 1 and node["description"] in ["chapter", "introduction", "conclusion"]:
             chapter_content = parser.get_section_content(exact_title=node["title"])
             
             # 检查内容是否为目录页
@@ -84,7 +84,7 @@ def process_md_file(file_path, output_dir):
                 print(f"跳过目录页: {node['title']}")
                 continue
                 
-            chapters.append((node["title"], chapter_content))
+            chapters.append((node["title"], chapter_content, node["description"]))
 
     # 如果没有提取到章节，跳过创建空目录
     if not chapters and not abstract:
@@ -96,7 +96,7 @@ def process_md_file(file_path, output_dir):
     
     # 将各章节保存为单独的文件
     chapter_info = []
-    for title, content in chapters:
+    for title, content, description in chapters:
         # 更强的文件名清理，移除所有可能导致问题的特殊字符
         safe_title = re.sub(r'[\\/*?:"<>|${}]', '', title)
         safe_title = safe_title.replace(" ", "_").replace("/", "_")
@@ -116,12 +116,17 @@ def process_md_file(file_path, output_dir):
             # 记录章节信息
             chapter_info.append({
                 "title": title,
-                "file_path": chapter_file_path,
+                "file_path": os.path.abspath(chapter_file_path),
+                "description": description,
                 "content_length": len(content)
             })
         except Exception as e:
             print(f"保存章节 '{title}' 时出错: {e}")
             print(f"尝试使用的文件路径: {chapter_file_path}")
+    # 将chapter_info保存为JSON文件
+    chapter_info_path = os.path.join(file_output_dir, "chapter_info.json")
+    with open(chapter_info_path, "w", encoding="utf-8") as f:
+        json.dump(chapter_info, f, ensure_ascii=False, indent=4)
 
     # 保存摘要信息
     if abstract:

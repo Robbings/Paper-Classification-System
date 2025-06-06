@@ -6,13 +6,14 @@ import pandas as pd
 from typing import Dict, Any
 from utils import client, chunk_long_chapter
 
-def classify_chapter_with_context(chapter_name, chapter_content, summary_excellent, summary_warning, chapter_index=None, save_dir=None):
+def classify_chapter_with_context(chapter_name, chapter_content, description, summary_excellent, summary_warning, chapter_index=None, save_dir=None):
     """
     对单个章节进行分类
     
     Args:
         chapter_name: 章节名称
         chapter_content: 章节内容
+        description: 章节描述
         summary_excellent: 优秀论文摘要
         summary_warning: 警告级别论文摘要
         chapter_index: 章节索引
@@ -38,7 +39,7 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
             # 为每个块创建消息
             messages = [
                 {"role": "system", "content": (
-                    "你是一位评估研究论文质量的专家评审员。基于论文的章节内容，将其分类为以下类别之一：\n\n"
+                    f"你是一位评估研究论文质量的专家评审员。基于论文的{description}章节内容，将其分类为以下类别之一：\n\n"
                     "- '优': 高质量的写作，清晰的问题定义，扎实且创新的方法论，合理的实验设计，以及显著的贡献。(相当于90-100分)\n"
                     "- '良': 写作清晰，问题定义合理，方法论可靠，有一定创新性，但可能在某些方面有小缺陷。(相当于80-89分)\n"
                     "- '中': 具有足够清晰度和合理方法的平均水平论文，但缺乏新颖性或深度，或存在一些明显问题。(相当于60-79分)\n"
@@ -47,11 +48,11 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
                     "将评价为'优''良'的分类为优秀级别章节；将评价为'中''差'的分类为警告级别章节。回复应包含最终的章节类别以及对该章节的详细评价。\n"
                     "注意，需要用中文生成回答。"
                 )},
-                {"role": "user", "content": f"优秀论文摘要：\n{summary_excellent}"},
+                {"role": "user", "content": f"优秀论文{description}部分摘要：\n{summary_excellent}"},
                 {"role": "assistant", "content": "优"},
-                {"role": "user", "content": f"警告级别论文摘要：\n{summary_warning}"},
+                {"role": "user", "content": f"警告级别论文{description}部分摘要：\n{summary_warning}"},
                 {"role": "assistant", "content": "差"},
-                {"role": "user", "content": f"请对这篇论文的章节 '{chapter_name}' 的第 {i+1}/{len(content_chunks)} 部分进行分类和评价：\n{chunk}"}
+                {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 的第 {i+1}/{len(content_chunks)} 部分进行分类和评价：\n{chunk}"}
             ]
             
             # 添加重试机制
@@ -98,9 +99,10 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
                         sub_feedbacks = []
                         
                         for j, sub_chunk in enumerate(sub_chunks):
+                            # 重复相同的代码会导致修改起来麻烦且容易出错。
                             sub_messages = [
                                 {"role": "system", "content": (
-                                    "你是一位评估研究论文质量的专家评审员。基于论文的章节内容，将其分类为以下类别之一：\n\n"
+                                    f"你是一位评估研究论文质量的专家评审员。基于论文的{description}章节内容，将其分类为以下类别之一：\n\n"
                                     "- '优': 高质量的写作，清晰的问题定义，扎实且创新的方法论，合理的实验设计，以及显著的贡献。(相当于90-100分)\n"
                                     "- '良': 写作清晰，问题定义合理，方法论可靠，有一定创新性，但可能在某些方面有小缺陷。(相当于80-89分)\n"
                                     "- '中': 具有足够清晰度和合理方法的平均水平论文，但缺乏新颖性或深度，或存在一些明显问题。(相当于60-79分)\n"
@@ -113,7 +115,7 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
                                 {"role": "assistant", "content": "优"},
                                 {"role": "user", "content": f"警告级别论文摘要：\n{summary_warning}"},
                                 {"role": "assistant", "content": "差"},
-                                {"role": "user", "content": f"请对这篇论文的章节 '{chapter_name}' 的第 {i+1}.{j+1} 部分进行分类和评价：\n{sub_chunk}"}
+                                {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 的第 {i+1}.{j+1} 部分进行分类和评价：\n{sub_chunk}"}
                             ]
                             
                             try:
@@ -212,7 +214,7 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
         # 内容不长，直接处理
         messages = [
             {"role": "system", "content": (
-                "你是一位评估研究论文质量的专家评审员。基于论文的章节内容，将其分类为以下类别之一：\n\n"
+                f"你是一位评估研究论文质量的专家评审员。基于论文的{description}章节内容，将其分类为以下类别之一：\n\n"
                 "- '优': 高质量的写作，清晰的问题定义，扎实且创新的方法论，合理的实验设计，以及显著的贡献。(相当于90-100分)\n"
                 "- '良': 写作清晰，问题定义合理，方法论可靠，有一定创新性，但可能在某些方面有小缺陷。(相当于80-89分)\n"
                 "- '中': 具有足够清晰度和合理方法的平均水平论文，但缺乏新颖性或深度，或存在一些明显问题。(相当于60-79分)\n"
@@ -221,11 +223,11 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
                 "将评价为'优''良'的分类为优秀级别章节；将评价为'中''差'的分类为警告级别章节。回复应包含最终的章节类别以及对该章节的详细评价。\n"
                 "注意，需要用中文生成回答。"
             )},
-            {"role": "user", "content": f"优秀论文摘要：\n{summary_excellent}"},
+            {"role": "user", "content": f"优秀论文{description}部分摘要：\n{summary_excellent}"},
             {"role": "assistant", "content": "优"},
-            {"role": "user", "content": f"警告级别论文摘要：\n{summary_warning}"},
+            {"role": "user", "content": f"警告级别论文{description}部分摘要：\n{summary_warning}"},
             {"role": "assistant", "content": "差"},
-            {"role": "user", "content": f"请对这篇论文的章节 '{chapter_name}' 进行分类和评价：\n{chapter_content}"}
+            {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 进行分类和评价：\n{chapter_content}"}
         ]
         
         # 添加重试机制
@@ -268,7 +270,7 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
                     # 如果是上下文长度错误，切换到分块处理模式
                     print(f"  ⚠️ 上下文长度超限，切换到分块处理模式")
                     # 递归调用自身，但使用分块处理模式
-                    return classify_chapter_with_context(chapter_name, chapter_content, summary_excellent, summary_warning, chapter_index, save_dir)
+                    return classify_chapter_with_context(chapter_name, chapter_content,description, summary_excellent, summary_warning, chapter_index, save_dir)
                 elif attempt < max_retries - 1:
                     print(f"  ⚠️ API调用失败，{retry_delay}秒后重试 ({attempt+1}/{max_retries}): {str(e)}")
                     import time
@@ -279,14 +281,31 @@ def classify_chapter_with_context(chapter_name, chapter_content, summary_excelle
         
         return "API调用失败，无法获取分类结果"
 
-# 并行处理论文章节分类
-def process_chapter_for_classification(chapter_index, chapter_name, chapter_content, summary_excellent, summary_warning, save_dir):
+
+def get_summary_by_description(summary_excellent_list, description):
+    """
+    根据章节描述获取对应的摘要
+    Args:
+        summary_excellent_list: 优秀论文摘要列表
+        description: 章节描述
+    Returns:
+        摘要字符串，如果未找到则返回空字符串
+    """
+    for item in summary_excellent_list:
+        if item["description"] == description:
+            return item["summary"], True
+    # 如果没有找到对应的摘要，将所有摘要合并为一个字符串
+    return "\n\n".join([item["summary"] for item in summary_excellent_list if item["description"] == description]), False
+
+
+def process_chapter_for_classification(chapter_index, chapter_name,chapter_content, description, summary_excellent_list, summary_warning_list, save_dir):
     """
     处理单个论文章节的分类任务
     
     Args:
         chapter_index: 章节索引
         chapter_name: 章节名称
+        description: 章节描述
         chapter_content: 章节内容
         summary_excellent: 优秀论文摘要
         summary_warning: 警告级别论文摘要
@@ -296,7 +315,12 @@ def process_chapter_for_classification(chapter_index, chapter_name, chapter_cont
         (chapter_index, chapter_name, feedback): 章节索引、名称和分类反馈
     """
     print(f"🧩 处理章节 {chapter_index+1}: {chapter_name}")
-    feedback = classify_chapter_with_context(chapter_name, chapter_content, summary_excellent, summary_warning, chapter_index, save_dir)
+    # 从summary_excellent_list和summary_warning_list中获取description对应的摘要
+    summary_excellent, has_description_ex = get_summary_by_description(summary_excellent_list, description)
+    summary_warning, has_description_wa = get_summary_by_description(summary_warning_list, description)
+    if not (has_description_ex and has_description_wa):
+        description = ""
+    feedback = classify_chapter_with_context(chapter_name, chapter_content, description, summary_excellent, summary_warning, chapter_index, save_dir)
     print(f"   ➜ 反馈: {feedback[:100]}...")  # 只打印前100个字符
     return chapter_index, chapter_name, feedback
 
@@ -323,9 +347,9 @@ def classify_chapters_parallel(chapters, summary_excellent, summary_warning):
     with ThreadPoolExecutor(max_workers=min(len(chapters), multiprocessing.cpu_count())) as executor:
         # 提交所有任务
         future_to_index = {
-            executor.submit(process_chapter_for_classification, i, chapter_name, chapter_content, 
+            executor.submit(process_chapter_for_classification, i, chapter_name, chapter_content, description,
                            summary_excellent, summary_warning, save_dir): i 
-            for i, (chapter_name, chapter_content) in enumerate(chapters)
+            for i, (chapter_name, chapter_content, description) in enumerate(chapters)
         }
         
         # 获取结果

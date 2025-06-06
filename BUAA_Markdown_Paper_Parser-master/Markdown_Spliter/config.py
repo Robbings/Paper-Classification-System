@@ -1,5 +1,15 @@
 keywords_config = [
     {
+        "keyword": r"绪\s*论",
+        "description": "introduction",
+        "level": 1,
+    },
+    {
+        "keyword": r"结\s*论",
+        "description": "conclusion",
+        "level": 1,
+    },
+    {
         # 章
         "keyword": r"第.*章",
         "description": "chapter",

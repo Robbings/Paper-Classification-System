@@ -75,11 +75,6 @@ def main():
     
     # 定义要执行的脚本及其描述和参数
     scripts = [
-        # {
-        #     "path": os.path.join(base_dir, "file_classifier.py"),
-        #     "description": "将同一学院的论文提取出来",
-        #     "args": ["--source", args.source, "--destination", args.destination]
-        # },
         {
             "path": os.path.join(base_dir, "create_folders_for_files.py"),
             "description": "为源文件夹中的所有文件创建同名（无后缀）的文件夹，并将文件移动到对应文件夹中",
