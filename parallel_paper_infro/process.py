@@ -113,7 +113,6 @@ def process_paper_task(task_config):
     summary_warning_list = None
     
     # 尝试加载已有的摘要
-    # TODO: 这里更改为加载带标签的摘要
     if os.path.exists(excellent_summary_path):
         try:
             with open(excellent_summary_path, 'r', encoding='utf-8') as f:
