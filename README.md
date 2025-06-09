@@ -25,19 +25,16 @@ python file_classifier.py
 │   ├── BY1501105.md
 │   └── ...
 ├── TBD/               # 待测论文文件夹（运行分类模式时使用）
- ```
 ```
  3. 运行数据预处理脚本
 ```bash
 python data_preprocess.py --source "您的源文件夹路径"
- ```
 ```
 
 示例：
 
 ```bash
 python data_preprocess.py --source "D:/paperClassification/data/02"
- ```
 ```
 
 预处理脚本将依次执行以下操作：
@@ -84,7 +81,7 @@ python main_acc copy.py --source "您的源文件夹路径" --sample_ratio 比�
 
 ```bash
 # 使用1/3的论文作为示例论文（默认比例）
-python main_acc copy.py --source "D:/paperClassification/data/02" --mode accuracy
+python main_all.py --source "D:/paperClassification/data/02" --mode accuracy
 
 # 使用1/2的论文作为示例论文
 python main_acc copy.py --source "D:/paperClassification/data/02" --sample_ratio 0.5 --mode accuracy
@@ -94,7 +91,7 @@ python main_acc copy.py --source "D:/paperClassification/data/02" --sample_ratio
 该模式以 excellent paper/poor paper 中的论文作为示例论文，将 TBD 中的论文作为待测论文，返回预测结果。使用前请将待预测论文放入 TBD 文件夹中。
 
 ```bash
-python parallel_paper_infro/main_acc copy.py --source "您的源文件夹路径" --mode classify
+python parallel_paper_infro/main_all.py --source "您的源文件夹路径" --mode classify
  ```
 ```
 

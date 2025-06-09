@@ -365,10 +365,10 @@ def classify_chapters_parallel(chapters, summary_excellent, summary_warning):
     
     return results
 
-def get_metrics_info(sid: str) -> Dict[str, Any]:
+def get_metrics_info(sid: str):
     """获取论文的各项指标信息"""
     try:
-        info_df = pd.read_excel('博士论文全信息汇总.xlsx')  # 全信息汇总的文件路径
+        info_df = pd.read_excel('./parallel_paper_infro/博士论文全信息汇总.xlsx')  # 使用相对路径
         info_df = info_df[info_df['学号'] == sid]
         
         # 检查是否找到匹配的学号
@@ -377,28 +377,7 @@ def get_metrics_info(sid: str) -> Dict[str, Any]:
             # 返回空字典而非默认值
             return {}
             
-        paper_count = info_df['论文数'].values[0]
-        max_impact = info_df['最高影响因子'].values[0]
-        zones = info_df['分区'].values[0]
-        gender = info_df['性别'].values[0]
-        department = info_df['院系'].values[0]
-        study_type = info_df['学制'].values[0]
-        training_type = info_df['培养方式'].values[0]
-        proposal_grade = info_df['开题成绩'].values[0]
-        fail_count = info_df['开题不及格次数'].values[0]
-        proposal_time = info_df['开题时间'].values[0]
-        return {
-            '论文数': paper_count,
-            '最高影响因子': max_impact,
-            '分区分布': zones,
-            '性别': gender,
-            '院系': department,
-            '学制': study_type,
-            '培养方式': training_type,
-            '开题成绩': proposal_grade,  # 对开题成绩进行了数值化处理
-            '开题不及格次数': fail_count,
-            '开题时间': proposal_time
-        }
+        return info_df
     except Exception as e:
         print(f"⚠️ 获取学生信息时出错: {str(e)}")
         # 出错时也返回空字典而非默认值
@@ -435,29 +414,41 @@ def classify_paper_by_chapters(chapters, summary_excellent, summary_warning, tas
     else:
         metrics_info = get_metrics_info(task_id)
         print(f"获取到学号 {task_id} 的指标信息: {metrics_info}")
+
+    # === 综合判断整体分级 ===
+    metrics_text = ""
+    if isinstance(metrics_info, pd.DataFrame) and not metrics_info.empty:
+        metrics_text = (
+            "以下给出一些关于该论文作者的指标信息来辅助你进行打分：\n\n"
+            f"   - 发表论文数量：{metrics_info['论文数'].iloc[0]}\n"
+            f"   - 最高影响因子：{metrics_info['最高影响因子'].iloc[0]}\n"
+            f"   - 影响因子总和：{metrics_info['影响因子总和'].iloc[0]}\n"
+            f"   - 最佳分区：{metrics_info['最佳分区'].iloc[0]}\n"
+            f"   - 学生类别：{metrics_info['学生类别'].iloc[0]}\n"
+        )
+    else:
+        metrics_text = "未找到该论文作者的指标信息，请仅基于论文内容进行评价。\n\n"
     
     # === 综合判断整体分级 ===
     final_messages = [
         {"role": "system", "content": (
             "你是一位负责对论文提交做出最终判断的高级评审员。\n\n"
             + (
-                "以下给出一些关于该论文作者的指标信息来辅助你进行打分：\n\n"
-                "1. 科研成果：\n"
-                f"   - 发表论文数量：{metrics_info.get('论文数', '未知')}篇\n"
-                f"   - 最高影响因子：{metrics_info.get('最高影响因子', '未知')}\n"
-                f"   - 论文分区分布：{metrics_info.get('分区分布', '未知')}\n\n"
-                "2. 学生信息：\n"
-                f"   - 性别：{metrics_info.get('性别', '未知')}\n"
-                f"   - 所属院系：{metrics_info.get('院系', '未知')}\n"
-                f"   - 学制：{metrics_info.get('学制', '未知')}\n"
-                f"   - 培养方式：{metrics_info.get('培养方式', '未知')}\n\n"
-                "3. 开题情况：\n"
-                f"   - 开题成绩：{metrics_info.get('开题成绩', '未知')}\n"
-                f"   - 开题不及格次数：{metrics_info.get('开题不及格次数', '未知')}次\n"
-                f"   - 开题时间：{metrics_info.get('开题时间', '未知')}\n\n"
-                if metrics_info else "未找到该论文作者的指标信息，请仅基于论文内容进行评价。\n\n"
-                )
-            # +"请基于论文作者的指标信息和每个章节的详细反馈，尤其是每个章节的不足之处，用严格的标准对论文进行全面评估，并按以下格式输出评价结果：\n\n"
+                "给你一些优博和风险论文指标的参考基准：\n\n"
+                "优博学生的特征平均值：\n"
+                "   - 发表论文数量：4.39篇\n"
+                "   - 最高影响因子：13.25\n"
+                "   - 影响因子总和：27.74\n"
+                "   - 最佳分区：87.8%为Q1，12.2%为Q2\n"
+                "   - 学生类别：51.3%为全日制学术型硕博连读，22%为全日制学术型博士，22%为全日制学术型直博生\n"
+                "风险论文学生的特征平均值：\n"
+                "   - 发表论文数量：2.67篇\n"
+                "   - 最高影响因子：6.52\n"
+                "   - 影响因子总和：8.88\n"
+                "   - 最佳分区：56%为Q1，26.9%为Q2\n"
+                "   - 学生类别：59.6%为全日制学术型博士，23%为全日制学术型硕博连读\n"
+                + metrics_text
+            )
             +"请基于论文作者的指标信息和每个章节的详细反馈，对论文进行全面评估，并按以下格式输出评价结果：\n\n"
             "# 论文总体评价\n"
             "- 总分：[0-100分]\n"
