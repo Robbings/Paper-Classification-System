@@ -161,27 +161,31 @@ def main():
             return
         
         # 限制最多处理15个任务
-        tasks = tasks[:15]
-        
-        if len(tasks) == 1:
-            # 只有一个任务，直接处理
-            print("只有一个任务，直接处理...")
-            process_paper_task(tasks[0])
-        else:
-            # 有多个任务，使用线程并行处理
-            print(f"发现 {len(tasks)} 个任务，启动并行处理...")
-            threads = []
-            
-            for task in tasks:
-                thread = threading.Thread(target=process_paper_task, args=(task,))
-                threads.append(thread)
-                thread.start()
-                print(f"已启动任务线程: {task['task_id']}")
-            
-            # 等待所有线程完成
-            for thread in threads:
-                thread.join()
-            
+        # 如果task超过15个，串行执行
+        print(f"发现 {len(tasks)} 个待分类任务，准备处理...")
+        MAX_BATCH_SIZE = 15
+        for i in range(0, len(tasks), MAX_BATCH_SIZE):
+            batch = tasks[i:i + MAX_BATCH_SIZE]
+
+            if len(batch) == 1:
+                # 只有一个任务，直接处理
+                print("只有一个任务，直接处理...")
+                process_paper_task(batch[0])
+            else:
+                # 有多个任务，使用线程并行处理
+                print(f"发现 {len(batch)} 个任务，启动并行处理...")
+                threads = []
+
+                for task in batch:
+                    thread = threading.Thread(target=process_paper_task, args=(task,))
+                    threads.append(thread)
+                    thread.start()
+                    print(f"已启动任务线程: {task['task_id']}")
+
+                # 等待所有线程完成
+                for thread in threads:
+                    thread.join()
+                print(f"第 {i // MAX_BATCH_SIZE + 1} 批任务处理完成。")
             print("所有任务处理完成!")
 
 if __name__ == "__main__":

@@ -80,5 +80,10 @@ keywords_config = [
         "keyword": r"取得的研究成果",
         "description": "research_results",
         "level": -1,
+    },
+    {
+        "keyword" : r"结\s*论\s*与\s*展\s*望",
+        "description": "conclusion",
+        "level": 1,
     }
 ]

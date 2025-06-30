@@ -46,13 +46,15 @@ def classify_chapter_with_context(chapter_name, chapter_content, description, su
                     "- '差': 写作不清晰，结构混乱，方法论有缺陷或浅薄，结果薄弱，或缺少评估。(相当于60分以下)\n\n"
                     "请与提供的示例进行比较。评价时应着重关注本段的不足之处，以严厉的风格进行判断，并且最终以更加严格的标准分类。\n"
                     "将评价为'优''良'的分类为优秀级别章节；将评价为'中''差'的分类为警告级别章节。回复应包含最终的章节类别以及对该章节的详细评价。\n"
-                    "注意，需要用中文生成回答。"
+                    "注意：1. 需要用中文生成回答。2. 论文可能有截取，导致不完整，并非作者没有编写完成该章节，如果出现该情况不需要进行扣分。"
+                    "3. 论文为机器解析，可能存在非内容性的错误，如排版错误、公式错误等，请忽略这类可能机器造成的错误。"
                 )},
                 {"role": "user", "content": f"优秀论文{description}部分摘要：\n{summary_excellent}"},
                 {"role": "assistant", "content": "优"},
                 {"role": "user", "content": f"警告级别论文{description}部分摘要：\n{summary_warning}"},
                 {"role": "assistant", "content": "差"},
-                {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 的第 {i+1}/{len(content_chunks)} 部分进行分类和评价：\n{chunk}"}
+                {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 的第 {i+1}/{len(content_chunks)} 部分进行分类和评价：\n{chunk}"
+                                            f", 如果该部分内容缺失，则给出说明即可，不需要继续给该部分打分,评价为优即可"}
             ]
             
             # 添加重试机制
@@ -109,13 +111,15 @@ def classify_chapter_with_context(chapter_name, chapter_content, description, su
                                     "- '差': 写作不清晰，结构混乱，方法论有缺陷或浅薄，结果薄弱，或缺少评估。(相当于60分以下)\n\n"
                                     "请与提供的示例进行比较。评价时应着重关注本段的不足之处，以严厉的风格进行判断，并且最终以更加严格的标准分类。\n"
                                     "将评价为'优''良'的分类为优秀级别章节；将评价为'中''差'的分类为警告级别章节。回复应包含最终的章节类别以及对该章节的详细评价。\n"
-                                    "注意，需要用中文生成回答。"
+                                    "注意，1. 需要用中文生成回答。2. 论文可能有截取，导致不完整，并非作者没有编写完成该章节，如果出现该情况不需要进行扣分。\n"
+                                    "3. 如果该部分内容缺失，则给出说明，而且不需要继续给该部分打分,评价为优即可"
                                 )},
                                 {"role": "user", "content": f"优秀论文摘要：\n{summary_excellent}"},
                                 {"role": "assistant", "content": "优"},
                                 {"role": "user", "content": f"警告级别论文摘要：\n{summary_warning}"},
                                 {"role": "assistant", "content": "差"},
-                                {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 的第 {i+1}.{j+1} 部分进行分类和评价：\n{sub_chunk}"}
+                                {"role": "user", "content": f"请对这篇论文的{description}章节 '{chapter_name}' 的第 {i+1}.{j+1} 部分进行分类和评价：\n{sub_chunk}"
+                                                            f", 如果该部分内容缺失，则给出说明即可，不需要继续给该部分打分,评价为优即可"}
                             ]
                             
                             try:
@@ -169,7 +173,8 @@ def classify_chapter_with_context(chapter_name, chapter_content, description, su
                         "- '差': 写作不清晰，结构混乱，方法论有缺陷或浅薄，结果薄弱，或缺少评估。(相当于60分以下)\n\n"
                         "请与提供的示例进行比较。评价时应着重关注本段的不足之处，以严厉的风格进行判断，并且最终以更加严格的标准分类。\n"
                         "将评价为'优''良'的分类为优秀级别章节；将评价为'中''差'的分类为警告级别章节。回复应包含最终的章节类别以及对该章节的详细评价。\n"
-                        "注意，需要用中文生成回答，并且评价应该简洁明了。"
+                        "注意，1. 需要用中文生成回答，并且评价应该简洁明了。2. 论文可能有截取，导致不完整，并非作者没有编写完成该章节，如果出现该情况不需要进行扣分。"
+                        "3. 论文为机器解析，可能存在非内容性的错误，如排版错误、公式错误等，请忽略这类可能机器造成的错误。"
                     )},
                     {"role": "user", "content": f"以下是对论文章节 '{chapter_name}' 的各个部分的评价：\n\n" + 
                      "\n\n".join([f"第 {i+1} 部分评价:\n{fb}" for i, fb in enumerate(chunk_feedbacks)]) + 
@@ -221,7 +226,8 @@ def classify_chapter_with_context(chapter_name, chapter_content, description, su
                 "- '差': 写作不清晰，结构混乱，方法论有缺陷或浅薄，结果薄弱，或缺少评估。(相当于60分以下)\n\n"
                 "请与提供的示例进行比较。评价时应着重关注本段的不足之处，以严厉的风格进行判断，并且最终以更加严格的标准分类。\n"
                 "将评价为'优''良'的分类为优秀级别章节；将评价为'中''差'的分类为警告级别章节。回复应包含最终的章节类别以及对该章节的详细评价。\n"
-                "注意，需要用中文生成回答。"
+                "注意，1. 需要用中文生成回答。2. 论文可能有截取，导致不完整，并非作者没有编写完成该章节，如果出现该情况不需要进行扣分。\n"
+                "3. 论文为机器解析，可能存在非内容性的错误，如排版错误、公式错误等，请忽略这类可能机器造成的错误。"
             )},
             {"role": "user", "content": f"优秀论文{description}部分摘要：\n{summary_excellent}"},
             {"role": "assistant", "content": "优"},
@@ -344,7 +350,7 @@ def classify_chapters_parallel(chapters, summary_excellent, summary_warning):
     os.makedirs(save_dir, exist_ok=True)
     
     # 使用线程池而不是进程池来避免序列化问题
-    with ThreadPoolExecutor(max_workers=min(len(chapters), multiprocessing.cpu_count())) as executor:
+    with ThreadPoolExecutor(max_workers=min(len(chapters) + 1, multiprocessing.cpu_count())) as executor:
         # 提交所有任务
         future_to_index = {
             executor.submit(process_chapter_for_classification, i, chapter_name, chapter_content, description,
@@ -452,7 +458,7 @@ def classify_paper_by_chapters(chapters, summary_excellent, summary_warning, tas
             +"请基于论文作者的指标信息和每个章节的详细反馈，对论文进行全面评估，并按以下格式输出评价结果：\n\n"
             "# 论文总体评价\n"
             "- 总分：[0-100分]\n"
-            "- 评价档次：[优秀论文/风险论文] (80-100分为优秀论文，80分以下为风险论文)\n"
+            "- 评价档次：[优秀论文/风险论文] (80-100分应填写为优秀论文，80分以下应填写为风险论文)\n"
             # "- 评价档次：[优/良/中/差] (90-100分为优，80-89分为良，60-79分为中，60分以下为差)\n"
             "- 推荐优秀论文指数：[0-1之间的数值，数值越大，评分为90分以上的概率越高]\n"
             "- 风险系数：[0-1之间的数值，数值越大，风险越高]\n\n"

@@ -116,6 +116,7 @@ def process_md_file(file_path, output_dir):
             # 记录章节信息
             chapter_info.append({
                 "title": title,
+                "safe_title": safe_title,
                 "file_path": os.path.abspath(chapter_file_path),
                 "description": description,
                 "content_length": len(content)
@@ -205,3 +206,4 @@ if __name__ == '__main__':
     
     # 处理Markdown文件
     process_markdown_files(args.source)
+    # process_markdown_files("E:\\Code\\paperClassification\\paper")

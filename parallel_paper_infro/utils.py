@@ -64,7 +64,7 @@ def load_chapters_from_directory(directory_path):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     # 使用文件名作为章节名（去掉.md后缀）
-                    chapter_name = chapter.get("title")
+                    chapter_name = chapter.get("safe_title")
                     chapters.append((chapter_name, content, chapter.get("description", "chapter")))
                     print(f"  ✅ 成功加载章节: {chapter_name}")
             except Exception as e:
